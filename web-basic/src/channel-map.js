@@ -1,0 +1,17 @@
+export const CHANNELS = [
+  { id: 0, finger: '拇指', part: '指腹' },
+  { id: 1, finger: '拇指', part: '桡侧' },
+  { id: 2, finger: '拇指', part: '尺侧' },
+  { id: 3, finger: '食指', part: '指腹' },
+  { id: 4, finger: '食指', part: '桡侧' },
+  { id: 5, finger: '食指', part: '尺侧' },
+  { id: 6, finger: '中指', part: '指腹' },
+  { id: 7, finger: '中指', part: '桡侧' },
+  { id: 8, finger: '中指', part: '尺侧' },
+  { id: 9, finger: '无名指', part: '指腹' },
+  { id: 10, finger: '无名指', part: '桡侧' },
+  { id: 11, finger: '无名指', part: '尺侧' },
+  { id: 12, finger: '小指', part: '指腹' },
+  { id: 13, finger: '小指', part: '桡侧' },
+  { id: 14, finger: '小指', part: '尺侧' },
+];
