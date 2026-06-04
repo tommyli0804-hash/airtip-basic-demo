@@ -51,39 +51,7 @@
     }
     #serial-btn:hover { background: #444; }
 
-    #views-btn {
-      position: fixed;
-      top: 16px;
-      right: 116px;
-      z-index: 10;
-      padding: 8px 16px;
-      background: #333;
-      color: #eee;
-      border: 1px solid #555;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 13px;
-    }
-    #views-btn:hover { background: #444; }
-    #views-btn.active { background: #0a5; border-color: #0c6; }
-
-    /* 三视图象限角标 */
-    #views-labels .view-label {
-      position: fixed;
-      z-index: 11;
-      font-size: 12px;
-      color: #8af;
-      background: rgba(0,0,0,0.5);
-      padding: 2px 8px;
-      border-radius: 4px;
-      pointer-events: none;
-    }
-    #views-labels .view-label:nth-child(1) { top: 8px;             left: 25%; transform: translateX(-50%); }
-    #views-labels .view-label:nth-child(2) { top: 8px;             left: 75%; transform: translateX(-50%); }
-    #views-labels .view-label:nth-child(3) { top: calc(50% + 8px); left: 25%; transform: translateX(-50%); }
-    #views-labels .view-label:nth-child(4) { top: calc(50% + 8px); left: 75%; transform: translateX(-50%); }
-
-    /* 5×3 气压面板 */
+    /* 5×5 气压面板 */
     #pressure-display {
       position: fixed;
       bottom: 16px;
@@ -239,212 +207,6 @@
       border-radius: 50%;
       background: #ff2222;
     }
-
-    /* 设置面板 */
-    #settings-panel {
-      position: fixed;
-      top: 60px;
-      right: 16px;
-      z-index: 10;
-      width: 260px;
-      background: rgba(0,0,0,0.7);
-      border-radius: 6px;
-      padding: 10px 14px 8px;
-      font-size: 11px;
-      color: #ccc;
-      font-family: system-ui, sans-serif;
-    }
-
-    .settings-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-
-    .settings-title {
-      font-size: 13px;
-      color: #aaa;
-      font-weight: 600;
-    }
-
-    .settings-toggle {
-      background: #333;
-      color: #ccc;
-      border: 1px solid #555;
-      border-radius: 3px;
-      width: 22px;
-      height: 22px;
-      cursor: pointer;
-      font-size: 14px;
-      line-height: 1;
-      padding: 0;
-    }
-    .settings-toggle:hover { background: #444; }
-
-    .setting-row {
-      margin-bottom: 8px;
-    }
-
-    .setting-label-line {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 2px;
-    }
-
-    .setting-label-line label {
-      flex: 1;
-      color: #888;
-      font-size: 10px;
-    }
-
-    .setting-number {
-      width: 60px;
-      background: #222;
-      color: #eee;
-      border: 1px solid #444;
-      border-radius: 3px;
-      padding: 1px 4px;
-      font-size: 10px;
-      font-family: monospace;
-      text-align: right;
-    }
-
-    .setting-unit {
-      color: #555;
-      font-size: 9px;
-      width: 16px;
-      text-align: left;
-    }
-
-    .setting-slider {
-      width: 100%;
-      height: 4px;
-      -webkit-appearance: none;
-      appearance: none;
-      background: #333;
-      border-radius: 2px;
-      outline: none;
-      margin: 0;
-    }
-    .setting-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 12px;
-      height: 12px;
-      background: #0af;
-      border-radius: 50%;
-      cursor: pointer;
-    }
-    .setting-slider::-moz-range-thumb {
-      width: 12px;
-      height: 12px;
-      background: #0af;
-      border-radius: 50%;
-      cursor: pointer;
-      border: none;
-    }
-
-    .settings-footer {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 6px;
-    }
-
-    .settings-reset {
-      background: #333;
-      color: #aaa;
-      border: 1px solid #555;
-      border-radius: 3px;
-      padding: 3px 10px;
-      font-size: 10px;
-      cursor: pointer;
-    }
-    .settings-reset:hover { background: #444; }
-
-    .setting-row-bool {
-      margin-bottom: 4px;
-    }
-
-    .setting-bool-label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      color: #888;
-      font-size: 10px;
-    }
-
-    .setting-checkbox {
-      width: 12px;
-      height: 12px;
-      accent-color: #0af;
-      cursor: pointer;
-    }
-
-
-
-    /* 基础演示控制面板：保留原 UI 气质，只做最低链路控制 */
-    #basic-panel {
-      position: fixed;
-      top: 60px;
-      right: 16px;
-      z-index: 10;
-      width: 280px;
-      background: rgba(0,0,0,0.72);
-      border-radius: 6px;
-      padding: 10px 14px;
-      font-size: 12px;
-      color: #ccc;
-      font-family: system-ui, sans-serif;
-    }
-    #basic-panel .panel-title {
-      color: #aaa;
-      font-size: 13px;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-    #basic-panel label {
-      display: block;
-      color: #888;
-      margin-top: 8px;
-      margin-bottom: 4px;
-      font-size: 11px;
-    }
-    #basic-panel select,
-    #basic-panel input[type="range"] { width: 100%; }
-    #basic-panel select {
-      background: #222;
-      color: #eee;
-      border: 1px solid #444;
-      border-radius: 4px;
-      padding: 4px 6px;
-      font-size: 12px;
-    }
-    #basic-panel button {
-      margin-top: 8px;
-      margin-right: 6px;
-      padding: 5px 10px;
-      background: #333;
-      color: #eee;
-      border: 1px solid #555;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-    #basic-panel button:hover { background: #444; }
-    #mapping-box {
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 1px solid #333;
-      font-family: monospace;
-      color: #777;
-      line-height: 1.6;
-      font-size: 11px;
-    }
-    #mapping-box b { color: #aaa; font-weight: 500; }
-
   </style>
 </head>
 <body>
@@ -459,18 +221,18 @@
     </div>
   </div>
 
-  <button id="views-btn">三视图</button>
   <button id="serial-btn">连接串口</button>
 
-
   <div id="pressure-display">
-    <div class="title">气压输出 (5×3)</div>
+    <div class="title">气压输出 (5×5)</div>
     <div class="pocket-header">
+      <span>指尖</span>
       <span>指腹</span>
-      <span>桡侧</span>
-      <span>尺侧</span>
+      <span>指背</span>
+      <span>内侧</span>
+      <span>外侧</span>
     </div>
-    <!-- 由 JS 生成 5 行 × 3 列 -->
+    <!-- 由 JS 生成 5 行 × 5 列 -->
     <div id="pressure-grid"></div>
   </div>
 
@@ -479,8 +241,7 @@
     <div class="key-row"><span class="key-label"><kbd>左键</kbd> 拖轴</span> 移动手掌</div>
     <div class="key-row"><span class="key-label"><kbd>右键</kbd> 拖拽</span> 旋转视角</div>
     <div class="key-row"><span class="key-label"><kbd>滚轮</kbd></span> 缩放</div>
-    <div class="key-row"><span class="key-label"><kbd>Shift</kbd>+<kbd>滚轮</kbd></span> 调节握力（抓取/释放）</div>
-    <div class="key-row"><span class="key-label">移动中松握力</span> 抛出（抛物线）</div>
+    <div class="key-row"><span class="key-label"><kbd>Shift</kbd>+<kbd>滚轮</kbd></span> 调节握力</div>
     <div class="guide-sep"></div>
     <div class="guide-legend">
       <span class="legend-ghost"></span> 输入位置（ghost）
@@ -489,42 +250,10 @@
       <span class="legend-solid"></span> 约束位置（solid）
     </div>
     <div class="guide-legend">
-      <span class="legend-exceeded"></span> 超行程（失效 + 高低频告警脉冲）
-    </div>
-    <div class="guide-sep"></div>
-    <div class="key-row"><span class="key-label"><kbd>三视图</kbd></span> 透视/顶/前/侧四象限</div>
-    <div class="key-row"><span class="key-label">三视图<kbd>滚轮</kbd></span> 缩放光标所在象限</div>
-  </div>
-
-
-  <div id="basic-panel">
-    <div class="panel-title">基础输出控制</div>
-
-    <label>几何体触发</label>
-    <select id="object-select">
-      <option value="sphere">球体 Sphere</option>
-      <option value="box">正方体 Box</option>
-      <option value="cylinder">圆柱体 Cylinder</option>
-    </select>
-
-    <label>通道选择</label>
-    <select id="channel-select"></select>
-
-    <label>输出强度：<span id="intensity-label">0</span></label>
-    <input type="range" id="intensity-slider" min="0" max="255" value="0" />
-
-    <button id="send-btn">发送</button>
-    <button id="reset-btn">归零</button>
-
-    <div id="mapping-box">
-      <div><b>电压—气压映射</b></div>
-      <div>控制值：<span id="map-value">0</span> / 255</div>
-      <div>估计电压：<span id="map-voltage">0.00</span> V</div>
-      <div>估计气压：<span id="map-pressure">0.0</span> kPa</div>
-      <div>说明：基础线性映射，仅用于链路演示。</div>
+      <span class="legend-exceeded"></span> 超行程（失效）
     </div>
   </div>
 
-  <script type="module" src="./src/main.js"></script>
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>

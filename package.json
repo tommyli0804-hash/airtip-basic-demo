@@ -1,0 +1,21 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "description": "气动执行器 Web 控制界面与可视化前端。",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "events": "^3.3.0",
+    "leapjs": "^0.6.4",
+    "three": "^0.183.2",
+    "vite": "^8.0.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.0"
+  }
+}

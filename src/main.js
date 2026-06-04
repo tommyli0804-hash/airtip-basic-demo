@@ -1,39 +1,40 @@
 import { createScene } from './scene.js';
+import { createHandModel } from './hand.js';
+import { createLeapTracker } from './leap.js';
+import { createMouseMock } from './mouse-mock.js';
+import { createInteraction, FINGER_COUNT, POCKETS_PER_FINGER } from './interaction.js';
 import { createMockSerial, createWebSerial } from './serial.js';
-import {
-  createOutputFrame,
-  createAllOffFrame,
-  estimateVoltageAndPressure,
-  TOTAL_CHANNELS,
-} from './basic-control.js';
-import { CHANNELS, FINGER_NAMES, PART_NAMES } from './channel-map.js';
 
-// -----------------------------------------------------------------------------
-// AirTip Basic Demo
-// -----------------------------------------------------------------------------
-// 这个文件保留原 Demo 的界面组织方式：
-// 1. 场景初始化
-// 2. 输入状态显示
-// 3. 串口连接
-// 4. 5×3 气压面板
-// 5. 基础几何体触发与电压—气压映射
-//
-// 但本版本只用于基础链路演示，不包含完整 Leap Motion、手部骨骼、碰撞检测、
-// 方向性触觉映射、抓取保持、物理抛掷和康复任务状态机。
-// -----------------------------------------------------------------------------
-
-// --- 初始化基础场景 ---
+// --- 初始化 Three.js 场景 ---
 const canvas = document.createElement('canvas');
 document.body.appendChild(canvas);
-const demoScene = createScene(canvas);
+const { renderer, scene, camera, objects, orbit } = createScene(canvas);
 
-// --- 初始化输入状态：保留原 HUD，但降级为基础演示模式 ---
+// --- 初始化双手模型 ---
+// ghost = 半透明，显示原始输入位置
+// solid = 实体，显示约束后位置（被物体挡住）
+const ghostHand = createHandModel(scene, 'ghost');
+const solidHand = createHandModel(scene, 'solid');
+
+// --- 初始化输入源 ---
 const leapDot = document.getElementById('leap-dot');
 const leapLabel = document.getElementById('leap-status');
-if (leapDot && leapLabel) {
-  leapDot.className = 'dot error';
-  leapLabel.textContent = 'Leap Motion: 基础演示模式';
-}
+
+let leapConnected = false;
+
+const leap = createLeapTracker((connected) => {
+  leapConnected = connected;
+  leapDot.className = connected ? 'dot connected' : 'dot error';
+  leapLabel.textContent = connected
+    ? 'Leap Motion: 已连接'
+    : 'Leap Motion: 断开（Gumball 模拟中）';
+});
+
+const mouseMock = createMouseMock(camera, solidHand, renderer, scene);
+leapLabel.textContent = 'Leap Motion: 未连接（Gumball 模拟中）';
+
+// --- 初始化交互计算 ---
+const interaction = createInteraction(objects);
 
 // --- 初始化串口（默认 Mock） ---
 let serial = createMockSerial();
@@ -42,17 +43,15 @@ const serialDot = document.getElementById('serial-dot');
 const serialLabel = document.getElementById('serial-status');
 const serialBtn = document.getElementById('serial-btn');
 
-serialBtn?.addEventListener('click', async () => {
+serialBtn.addEventListener('click', async () => {
   if (!('serial' in navigator)) {
-    alert('当前浏览器不支持 WebSerial，请使用 Chrome / Edge');
+    alert('当前浏览器不支持 WebSerial，请使用 Chrome');
     return;
   }
-
   try {
-    const webSerial = createWebSerial();
-    await webSerial.connect();
-
-    serial = webSerial;
+    const ws = createWebSerial();
+    await ws.connect();
+    serial = ws;
     serialDot.className = 'dot connected';
     serialLabel.textContent = 'Serial: 已连接';
     serialBtn.textContent = '已连接';
@@ -64,147 +63,91 @@ serialBtn?.addEventListener('click', async () => {
   }
 });
 
-// --- 三视图按钮：保留原 UI 入口，但基础版只做状态切换 ---
-const viewsBtn = document.getElementById('views-btn');
-viewsBtn?.addEventListener('click', () => {
-  const on = demoScene.toggleViews();
-  viewsBtn.textContent = on ? '单视图' : '三视图';
-  viewsBtn.classList.toggle('active', on);
-});
+// --- 构建 5×5 气压面板 ---
+const FINGER_NAMES = ['拇', '食', '中', '环', '小'];
+const POCKET_CLASSES = ['pocket-tip', 'pocket-pad', 'pocket-dorsal', 'pocket-radial', 'pocket-ulnar'];
 
-// --- 构建 5×3 气压面板 ---
 const grid = document.getElementById('pressure-grid');
 const barEls = [];
 const valEls = [];
 
-if (grid) {
-  for (let f = 0; f < FINGER_NAMES.length; f++) {
-    const row = document.createElement('div');
-    row.className = 'finger-row';
+for (let f = 0; f < FINGER_COUNT; f++) {
+  const row = document.createElement('div');
+  row.className = 'finger-row';
 
-    const label = document.createElement('span');
-    label.className = 'finger-label';
-    label.textContent = FINGER_NAMES[f];
-    row.appendChild(label);
+  const label = document.createElement('span');
+  label.className = 'finger-label';
+  label.textContent = FINGER_NAMES[f];
+  row.appendChild(label);
 
-    for (let p = 0; p < PART_NAMES.length; p++) {
-      const idx = f * PART_NAMES.length + p;
-      const channel = CHANNELS[idx];
+  for (let p = 0; p < POCKETS_PER_FINGER; p++) {
+    const idx = f * POCKETS_PER_FINGER + p;
 
-      const cell = document.createElement('div');
-      cell.className = `pocket-cell ${channel.className}`;
-      cell.title = `${channel.finger}-${channel.part}`;
+    const cell = document.createElement('div');
+    cell.className = `pocket-cell ${POCKET_CLASSES[p]}`;
 
-      const bar = document.createElement('div');
-      bar.className = 'bar';
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const fill = document.createElement('div');
+    fill.className = 'bar-fill';
+    fill.id = `bar-${idx}`;
+    bar.appendChild(fill);
 
-      const fill = document.createElement('div');
-      fill.className = 'bar-fill';
-      fill.id = `bar-${idx}`;
-      bar.appendChild(fill);
+    const val = document.createElement('span');
+    val.className = 'val';
+    val.id = `val-${idx}`;
+    val.textContent = '0';
 
-      const val = document.createElement('span');
-      val.className = 'val';
-      val.id = `val-${idx}`;
-      val.textContent = '0';
+    cell.appendChild(bar);
+    cell.appendChild(val);
+    row.appendChild(cell);
 
-      cell.appendChild(bar);
-      cell.appendChild(val);
-      row.appendChild(cell);
-
-      barEls[idx] = fill;
-      valEls[idx] = val;
-    }
-
-    grid.appendChild(row);
+    barEls[idx] = fill;
+    valEls[idx] = val;
   }
+
+  grid.appendChild(row);
 }
 
 function updatePressureUI(pressures) {
-  for (let i = 0; i < TOTAL_CHANNELS; i++) {
-    const value = pressures[i] || 0;
-    const pct = (value / 255) * 100;
-
-    if (barEls[i]) barEls[i].style.width = `${pct}%`;
-    if (valEls[i]) valEls[i].textContent = String(value);
+  for (let i = 0; i < pressures.length; i++) {
+    const pct = (pressures[i] / 255) * 100;
+    barEls[i].style.width = `${pct}%`;
+    valEls[i].textContent = pressures[i];
   }
 }
 
-// --- 基础控制面板 ---
-const objectSelect = document.getElementById('object-select');
-const channelSelect = document.getElementById('channel-select');
-const intensitySlider = document.getElementById('intensity-slider');
-const intensityLabel = document.getElementById('intensity-label');
-const sendBtn = document.getElementById('send-btn');
-const resetBtn = document.getElementById('reset-btn');
-
-const mapValue = document.getElementById('map-value');
-const mapVoltage = document.getElementById('map-voltage');
-const mapPressure = document.getElementById('map-pressure');
-
-CHANNELS.forEach((channel) => {
-  const option = document.createElement('option');
-  option.value = channel.id;
-  option.textContent = `${channel.id} ${channel.finger}-${channel.part}`;
-  channelSelect?.appendChild(option);
-});
-
-function applyObjectPreset() {
-  if (!objectSelect || !intensitySlider) return;
-
-  const objectId = objectSelect.value;
-
-  // 基础版本：不同几何体仅对应不同默认输出强度。
-  // 这不是完整材质/接触算法，只是用于演示通道可输出。
-  if (objectId === 'sphere') intensitySlider.value = '90';
-  if (objectId === 'box') intensitySlider.value = '160';
-  if (objectId === 'cylinder') intensitySlider.value = '120';
-
-  demoScene.setActiveObject(objectId);
-  updateMappingDisplay();
-}
-
-function updateMappingDisplay() {
-  if (!intensitySlider) return;
-
-  const intensity = Number(intensitySlider.value);
-  const { voltage, pressure } = estimateVoltageAndPressure(intensity);
-
-  if (intensityLabel) intensityLabel.textContent = String(intensity);
-  if (mapValue) mapValue.textContent = String(intensity);
-  if (mapVoltage) mapVoltage.textContent = voltage.toFixed(2);
-  if (mapPressure) mapPressure.textContent = pressure.toFixed(1);
-}
-
-objectSelect?.addEventListener('change', applyObjectPreset);
-intensitySlider?.addEventListener('input', updateMappingDisplay);
-
-sendBtn?.addEventListener('click', async () => {
-  const channelId = Number(channelSelect?.value || 0);
-  const intensity = Number(intensitySlider?.value || 0);
-
-  const frame = createOutputFrame(channelId, intensity);
-  await serial.send(frame);
-
-  updatePressureUI(frame);
-  updateMappingDisplay();
-});
-
-resetBtn?.addEventListener('click', async () => {
-  const frame = createAllOffFrame();
-  await serial.send(frame);
-
-  if (intensitySlider) intensitySlider.value = '0';
-  updatePressureUI(frame);
-  updateMappingDisplay();
-});
-
-// --- 基础循环：只渲染几何体，不运行完整交互算法 ---
+// --- 主循环 ---
 function loop() {
   requestAnimationFrame(loop);
-  demoScene.render();
+
+  orbit.enabled = !mouseMock.isDragging();
+  orbit.update();
+
+  const input = leapConnected ? leap.getState() : mouseMock.getState();
+
+  // 计算碰撞约束 + 气压
+  const pressures = interaction.update(input);
+  const constrainedTips = interaction.getConstrainedTips();
+  const exceeded = interaction.getExceeded();
+
+  // ghost 手 = 原始输入位置（半透明）
+  ghostHand.update(input.hand);
+
+  // solid 手 = 约束后位置（被物体弹回）
+  if (input.hand) {
+    solidHand.update({
+      palm: input.hand.palm,
+      fingers: constrainedTips.map((t) => t.clone()),
+    }, exceeded);
+  } else {
+    solidHand.update(null);
+  }
+
+  serial.send(pressures);
+  updatePressureUI(pressures);
+
+  renderer.render(scene, camera);
 }
 
-applyObjectPreset();
-updatePressureUI(createAllOffFrame());
 loop();
