@@ -1,0 +1,6 @@
+input_value,voltage_level,pressure_note
+0,0,off
+64,low,weak output
+128,medium,medium output
+192,high,strong output
+255,max,max safe demo output
