@@ -38,10 +38,11 @@ export function createMouseMock(camera, handModel, renderer, scene) {
 
   function updateHand() {
     const palm = anchor.position.clone();
-    const tips = handModel.restPose(palm, grabStrength);
+    // restPose 返回 [{mcp, pip, dip, tip}] × 5
+    const fingers = handModel.restPose(palm, grabStrength);
     state.hand = {
       palm,
-      fingers: tips,
+      fingers,
       grabStrength,
       pinchStrength: grabStrength,
     };
