@@ -1,7 +1,4 @@
-export function createBasicScene() {
-  const canvas = document.createElement('canvas');
-  document.body.appendChild(canvas);
-
+export function createScene(canvas) {
   const ctx = canvas.getContext('2d');
 
   const state = {
@@ -11,6 +8,8 @@ export function createBasicScene() {
     rotation: 0,
     isDragging: false,
     lastX: 0,
+    activeObject: 'sphere',
+    viewsOn: false,
   };
 
   const objects = [
@@ -24,34 +23,41 @@ export function createBasicScene() {
     canvas.height = window.innerHeight;
     state.width = canvas.width;
     state.height = canvas.height;
-    draw();
-  }
-
-  function drawGrid() {
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-    ctx.lineWidth = 1;
-    const step = 40 * state.scale;
-    const cx = state.width / 2;
-    const cy = state.height / 2;
-    for (let x = cx % step; x < state.width; x += step) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, state.height); ctx.stroke();
-    }
-    for (let y = cy % step; y < state.height; y += step) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(state.width, y); ctx.stroke();
-    }
   }
 
   function transformPoint(x, y) {
     const cos = Math.cos(state.rotation);
     const sin = Math.sin(state.rotation);
+
     return {
       x: state.width / 2 + (x * cos - y * sin) * state.scale,
       y: state.height / 2 + (x * sin + y * cos) * state.scale,
     };
   }
 
+  function drawGrid() {
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+
+    const step = Math.max(16, 40 * state.scale);
+    for (let x = (state.width / 2) % step; x < state.width; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, state.height);
+      ctx.stroke();
+    }
+
+    for (let y = (state.height / 2) % step; y < state.height; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(state.width, y);
+      ctx.stroke();
+    }
+  }
+
   function drawObject(obj) {
     const p = transformPoint(obj.x, obj.y);
+    const active = obj.id === state.activeObject;
 
     ctx.save();
     ctx.translate(p.x, p.y);
@@ -59,8 +65,8 @@ export function createBasicScene() {
     ctx.scale(state.scale, state.scale);
 
     ctx.fillStyle = obj.color;
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-    ctx.lineWidth = 2 / state.scale;
+    ctx.strokeStyle = active ? '#fff' : 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = active ? 4 / state.scale : 2 / state.scale;
 
     if (obj.type === 'circle') {
       ctx.beginPath();
@@ -79,8 +85,10 @@ export function createBasicScene() {
       ctx.ellipse(0, -42, 38, 12, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+
       ctx.fillRect(-38, -42, 76, 84);
       ctx.strokeRect(-38, -42, 76, 84);
+
       ctx.beginPath();
       ctx.ellipse(0, 42, 38, 12, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -89,16 +97,17 @@ export function createBasicScene() {
 
     ctx.restore();
 
-    ctx.fillStyle = 'rgba(255,255,255,0.75)';
-    ctx.font = '13px system-ui';
+    ctx.fillStyle = active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.65)';
+    ctx.font = active ? 'bold 13px system-ui' : '13px system-ui';
     ctx.textAlign = 'center';
     ctx.fillText(obj.label, p.x, p.y + 72 * state.scale);
   }
 
   function drawHandHint() {
     const palm = transformPoint(-20, 145);
+
     ctx.save();
-    ctx.globalAlpha = 0.65;
+    ctx.globalAlpha = 0.58;
     ctx.fillStyle = '#ffcc00';
     ctx.strokeStyle = 'rgba(255,255,255,0.4)';
     ctx.lineWidth = 2;
@@ -114,6 +123,7 @@ export function createBasicScene() {
       ctx.moveTo(palm.x, palm.y);
       ctx.lineTo(tip.x, tip.y);
       ctx.stroke();
+
       ctx.beginPath();
       ctx.arc(tip.x, tip.y, 10 * state.scale, 0, Math.PI * 2);
       ctx.fill();
@@ -122,15 +132,36 @@ export function createBasicScene() {
     ctx.restore();
   }
 
-  function draw() {
+  function drawViewLines() {
+    if (!state.viewsOn) return;
+
+    ctx.strokeStyle = 'rgba(120,170,255,0.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(state.width / 2, 0);
+    ctx.lineTo(state.width / 2, state.height);
+    ctx.moveTo(0, state.height / 2);
+    ctx.lineTo(state.width, state.height / 2);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(120,170,255,0.65)';
+    ctx.font = '12px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('Perspective', state.width * 0.25, 24);
+    ctx.fillText('Top', state.width * 0.75, 24);
+    ctx.fillText('Front', state.width * 0.25, state.height / 2 + 24);
+    ctx.fillText('Side', state.width * 0.75, state.height / 2 + 24);
+  }
+
+  function render() {
     ctx.clearRect(0, 0, state.width, state.height);
     ctx.fillStyle = '#111';
     ctx.fillRect(0, 0, state.width, state.height);
 
     drawGrid();
-
     objects.forEach(drawObject);
     drawHandHint();
+    drawViewLines();
 
     ctx.fillStyle = 'rgba(255,255,255,0.35)';
     ctx.font = '12px system-ui';
@@ -152,19 +183,27 @@ export function createBasicScene() {
     const dx = e.clientX - state.lastX;
     state.lastX = e.clientX;
     state.rotation += dx * 0.006;
-    draw();
   });
 
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     const factor = e.deltaY > 0 ? 0.92 : 1.08;
-    state.scale = Math.max(0.5, Math.min(2.2, state.scale * factor));
-    draw();
+    state.scale = Math.max(0.55, Math.min(2.2, state.scale * factor));
   }, { passive: false });
 
   window.addEventListener('resize', resize);
-
   resize();
 
-  return { canvas, draw, state };
+  return {
+    canvas,
+    render,
+    state,
+    setActiveObject(id) {
+      state.activeObject = id;
+    },
+    toggleViews() {
+      state.viewsOn = !state.viewsOn;
+      return state.viewsOn;
+    },
+  };
 }

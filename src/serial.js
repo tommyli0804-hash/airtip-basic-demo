@@ -24,8 +24,9 @@ export function createWebSerial() {
 
     async connect() {
       if (!('serial' in navigator)) {
-        throw new Error('当前浏览器不支持 WebSerial，请使用 Chrome 或 Edge');
+        throw new Error('当前浏览器不支持 WebSerial，请使用 Chrome / Edge');
       }
+
       port = await navigator.serial.requestPort();
       await port.open({ baudRate: 115200 });
       this.connected = true;

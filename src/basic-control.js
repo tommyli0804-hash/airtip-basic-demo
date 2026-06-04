@@ -16,10 +16,9 @@ export function createAllOffFrame() {
   return new Uint8Array(TOTAL_CHANNELS);
 }
 
-// 基础线性映射：仅用于网页显示和链路演示
-// 这里用论文中常用的演示区间近似显示，不做个体化补偿。
 export function estimateVoltageAndPressure(value) {
   const v = Math.max(0, Math.min(255, Number(value) || 0));
+
   if (v <= 0) {
     return { voltage: 0, pressure: 0 };
   }
