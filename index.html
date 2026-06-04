@@ -1,37 +1,336 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <title>AirTip Basic Demo</title>
-  <script type="module" src="./src/main.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>气动触觉执行器 Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #111; color: #eee; font-family: system-ui, sans-serif; overflow: hidden; }
+    canvas { display: block; }
+
+    #hud {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #555;
+      flex-shrink: 0;
+    }
+    .dot.connected { background: #4f4; }
+    .dot.error { background: #f44; }
+
+    #serial-btn, #views-btn {
+      position: fixed;
+      top: 16px;
+      z-index: 10;
+      padding: 8px 16px;
+      background: #333;
+      color: #eee;
+      border: 1px solid #555;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    #serial-btn { right: 16px; }
+    #views-btn { right: 116px; }
+    #serial-btn:hover, #views-btn:hover { background: #444; }
+    #views-btn.active { background: #0a5; border-color: #0c6; }
+
+    /* 5×3 气压面板 */
+    #pressure-display {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      z-index: 10;
+      font-size: 11px;
+      font-family: monospace;
+      background: rgba(0,0,0,0.6);
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    #pressure-display .title {
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #aaa;
+    }
+
+    .finger-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 3px;
+    }
+
+    .finger-label {
+      width: 28px;
+      text-align: right;
+      color: #888;
+      flex-shrink: 0;
+    }
+
+    .pocket-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 44px;
+    }
+
+    .pocket-cell .bar {
+      width: 36px;
+      height: 8px;
+      background: #222;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .pocket-cell .bar-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 50ms;
+    }
+
+    .pocket-cell .val {
+      font-size: 9px;
+      color: #666;
+      margin-top: 1px;
+    }
+
+    .pocket-tip .bar-fill   { background: #0af; }
+    .pocket-radial .bar-fill { background: #f0a; }
+    .pocket-ulnar .bar-fill  { background: #a0f; }
+
+    .pocket-header {
+      display: flex;
+      gap: 4px;
+      margin-left: 32px;
+      margin-bottom: 2px;
+    }
+    .pocket-header span {
+      width: 44px;
+      text-align: center;
+      color: #555;
+      font-size: 10px;
+    }
+
+    /* 操作指南 */
+    #guide {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 10;
+      font-size: 11px;
+      font-family: system-ui, sans-serif;
+      background: rgba(0,0,0,0.6);
+      border-radius: 6px;
+      padding: 10px 14px;
+      line-height: 1.7;
+      color: #888;
+    }
+
+    #guide .guide-title {
+      font-size: 12px;
+      color: #aaa;
+      margin-bottom: 4px;
+    }
+
+    #guide kbd {
+      display: inline-block;
+      background: #333;
+      color: #ccc;
+      border: 1px solid #555;
+      border-radius: 3px;
+      padding: 0 4px;
+      font-size: 10px;
+      font-family: monospace;
+      line-height: 1.6;
+    }
+
+    #guide .key-row {
+      display: flex;
+      gap: 6px;
+      align-items: baseline;
+    }
+
+    #guide .key-label {
+      flex-shrink: 0;
+      min-width: 80px;
+      text-align: right;
+      color: #666;
+    }
+
+    #guide .guide-sep {
+      border-top: 1px solid #333;
+      margin: 6px 0;
+    }
+
+    #guide .guide-legend {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 3px;
+    }
+
+    #guide .legend-ghost, #guide .legend-solid, #guide .legend-exceeded {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+    #guide .legend-ghost {
+      background: rgba(255, 204, 0, 0.25);
+      border: 1px solid rgba(255, 204, 0, 0.5);
+    }
+    #guide .legend-solid { background: #ffcc00; }
+    #guide .legend-exceeded { background: #ff2222; }
+
+    /* 基础控制面板 */
+    #basic-panel {
+      position: fixed;
+      top: 60px;
+      right: 16px;
+      z-index: 10;
+      width: 280px;
+      background: rgba(0,0,0,0.72);
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #ccc;
+    }
+
+    #basic-panel .panel-title {
+      color: #aaa;
+      font-size: 13px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    #basic-panel label {
+      display: block;
+      color: #888;
+      margin-top: 8px;
+      margin-bottom: 4px;
+      font-size: 11px;
+    }
+
+    #basic-panel select,
+    #basic-panel input[type="range"] {
+      width: 100%;
+    }
+
+    #basic-panel select {
+      background: #222;
+      color: #eee;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-size: 12px;
+    }
+
+    #basic-panel button {
+      margin-top: 8px;
+      margin-right: 6px;
+      padding: 5px 10px;
+      background: #333;
+      color: #eee;
+      border: 1px solid #555;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    #basic-panel button:hover { background: #444; }
+
+    #mapping-box {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #333;
+      font-family: monospace;
+      color: #777;
+      line-height: 1.6;
+      font-size: 11px;
+    }
+    #mapping-box b { color: #aaa; font-weight: 500; }
+  </style>
 </head>
 <body>
-  <h1>AirTip Basic Demo</h1>
-  <button id="connectBtn">Connect to Device</button><br><br>
-  <label>通道选择:
-    <select id="channelSelect">
-      <option value="0">拇指-指腹</option>
-      <option value="1">拇指-桡侧</option>
-      <option value="2">拇指-尺侧</option>
-      <option value="3">食指-指腹</option>
-      <option value="4">食指-桡侧</option>
-      <option value="5">食指-尺侧</option>
-      <option value="6">中指-指腹</option>
-      <option value="7">中指-桡侧</option>
-      <option value="8">中指-尺侧</option>
-      <option value="9">无名指-指腹</option>
-      <option value="10">无名指-桡侧</option>
-      <option value="11">无名指-尺侧</option>
-      <option value="12">小指-指腹</option>
-      <option value="13">小指-桡侧</option>
-      <option value="14">小指-尺侧</option>
+  <div id="hud">
+    <div class="status-row">
+      <span class="dot error" id="leap-dot"></span>
+      <span id="leap-status">Leap Motion: 基础演示模式</span>
+    </div>
+    <div class="status-row">
+      <span class="dot" id="serial-dot"></span>
+      <span id="serial-status">Serial: Mock 模式</span>
+    </div>
+  </div>
+
+  <button id="views-btn">三视图</button>
+  <button id="serial-btn">连接串口</button>
+
+  <div id="basic-panel">
+    <div class="panel-title">基础输出控制</div>
+    <label>几何体触发</label>
+    <select id="object-select">
+      <option value="sphere">球体 Sphere</option>
+      <option value="box">正方体 Box</option>
+      <option value="cylinder">圆柱体 Cylinder</option>
     </select>
-  </label><br><br>
-  <label>强度:
-    <input type="range" id="intensitySlider" min="0" max="255" value="0">
-  </label><br><br>
-  <button id="sendBtn">Send</button>
-  <button id="resetBtn">Reset</button>
-  <canvas id="sceneCanvas" width="600" height="400" style="border:1px solid black"></canvas>
+
+    <label>通道选择</label>
+    <select id="channel-select"></select>
+
+    <label>输出强度：<span id="intensity-label">0</span></label>
+    <input type="range" id="intensity-slider" min="0" max="255" value="0" />
+
+    <button id="send-btn">发送</button>
+    <button id="reset-btn">归零</button>
+
+    <div id="mapping-box">
+      <div><b>电压—气压映射</b></div>
+      <div>控制值：<span id="map-value">0</span> / 255</div>
+      <div>估计电压：<span id="map-voltage">0.00</span> V</div>
+      <div>估计气压：<span id="map-pressure">0.0</span> kPa</div>
+      <div>说明：基础线性映射，仅用于链路演示。</div>
+    </div>
+  </div>
+
+  <div id="pressure-display">
+    <div class="title">气压输出 (5×3)</div>
+    <div class="pocket-header">
+      <span>指腹</span>
+      <span>桡侧</span>
+      <span>尺侧</span>
+    </div>
+    <div id="pressure-grid"></div>
+  </div>
+
+  <div id="guide">
+    <div class="guide-title">操作指南</div>
+    <div class="key-row"><span class="key-label"><kbd>左键</kbd> 拖拽</span> 旋转场景</div>
+    <div class="key-row"><span class="key-label"><kbd>滚轮</kbd></span> 缩放</div>
+    <div class="key-row"><span class="key-label"><kbd>发送</kbd></span> 输出当前通道</div>
+    <div class="key-row"><span class="key-label"><kbd>归零</kbd></span> 关闭全部通道</div>
+    <div class="guide-sep"></div>
+    <div class="guide-legend"><span class="legend-ghost"></span> 基础演示输入</div>
+    <div class="guide-legend"><span class="legend-solid"></span> 几何体对象</div>
+    <div class="guide-legend"><span class="legend-exceeded"></span> 预留状态</div>
+  </div>
+
+  <!-- 注意：这里必须使用相对路径，GitHub Pages 项目页不能写 /src/main.js -->
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>
